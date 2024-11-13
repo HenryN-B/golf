@@ -1,0 +1,66 @@
+
+
+
+@font-face {
+    font-family: 'title_font';
+    src: url('/static/assets/fonts/MightySouly-lxggD.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    margin: 0;
+    background-image: url('/static/assets/images/card-background.avif');
+    background-size: cover;
+}
+
+
+.welcome {
+    margin: 0;
+    position: absolute;
+    top: 5%; 
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 50px;
+    font-family: title_font;
+    color: rgb(212, 190, 187);
+    text-align: center;
+    text-shadow: 1px 1px 2px black, 0 0 25px rgb(132, 0, 0), 0 0 10px rgb(176, 0, 0); 
+    display: inline-block;
+    background-color: rgba(0, 0, 0, 0.8); 
+    padding: 10px 20px;
+    border-radius: 8px; 
+    transition: transform 0.3s ease-in-out, color 0.3s ease; 
+
+}
+
+
+.start {
+    border-radius: 10px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 30px;
+    font-family: 'Verdana', sans-serif; /* Consider a more modern font */
+    
+    background-color: #761616; /* Rich brown base color */
+    border: 2px solid #300505; /* Darker brown for the border */
+    color: #e8cece; /* Light cream text color for better contrast */
+    padding: 12px 24px; /* Add some padding for a better look */
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.15s, transform 0.1s, box-shadow 0.15s;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Add a shadow for depth */
+}
+
+.start:hover {
+    background-color: #882828; /* Lighter brown for hover effect */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4); /* Enhanced shadow on hover */
+}
+
+.start:active {
+    transform: translate(-50%, -48%); /* Pressed effect */
+    opacity: 0.9;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2); /* Reduced shadow on click */
+}
