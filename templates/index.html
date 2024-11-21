@@ -1,18 +1,93 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/main.css') }}"
+{% extends 'base.html' %} {% block content %}
+<form method="POST" class="contain">
+  <h2 class="welcome">
+    Welcome to <br />
+    Golf the Card Game
+  </h2>
+
+  <h3>Enter Code to join a room or Create a new room</h3>
+  <div class="name">
+    <input
+      type="text"
+      placeholder="Name"
+      name="name"
+      value="{{name}}"
+      class="input-field"
     />
-    <title>Golf Card Game</title>
-  </head>
-  <body>
-    <div class="text_box">
-      <p class="welcome">Welcome to Golf</p>
-      <button class="start">Start game</button>
-    </div>
-  </body>
-</html>
+  </div>
+  <button type="submit" name="create" class="create">Create a Room</button>
+  <div class="join">
+    <input
+      type="text"
+      placeholder="Room Code"
+      name="code"
+      value="{{code}}"
+      class="input-field"
+    />
+    <button type="submit" name="join" class="create">Join a Room</button>
+  </div>
+
+  {% if error %}
+  <ul>
+    <li>{{error}}</li>
+  </ul>
+  {% endif %}
+</form>
+
+<script src="https://cdn.socket.io/4.7.1/socket.io.min.js"></script>
+<script>
+  const socket = io();
+
+  document
+    .querySelector('[name="create"]')
+    .addEventListener("click", (event) => {
+      event.preventDefault();
+      const name = document.querySelector('[name="name"]').value;
+
+      if (!name) {
+        alert("Please enter your name!");
+        return;
+      }
+
+      socket.emit("create_room", { name });
+    });
+
+  document.querySelector('[name="join"]').addEventListener("click", (event) => {
+    event.preventDefault();
+    const name = document.querySelector('[name="name"]').value;
+    const room = document.querySelector('[name="code"]').value;
+
+    if (!name) {
+      alert("Please enter your name!");
+      return;
+    }
+
+    if (!room) {
+      alert("Please enter room code!");
+      return;
+    }
+
+    socket.emit("join_room", { name, room });
+  });
+
+  // Handle redirections
+  socket.emit("create_room", { name: "playerName" }, (response) => {
+    if (response.url) {
+      localStorage.setItem("name", "playerName");
+      localStorage.setItem("room", response.room);
+      window.location.href = response.url;
+    } else {
+      console.error(response.error);
+    }
+  });
+
+  socket.on("error_message", (data) => {
+    alert(data.message);
+  });
+
+  window.addEventListener("beforeunload", () => {
+    localStorage.removeItem("name");
+    localStorage.removeItem("room");
+  });
+</script>
+{% endblock %}

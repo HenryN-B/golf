@@ -1,4 +1,5 @@
 import random
+import json
 
 
 class Player:
@@ -8,16 +9,33 @@ class Player:
         self.player_hand = []
         self.player_score = 0
 class Game:
-    def __init__(self,num_players):
+    def __init__(self):
         self.deck = []
         self.players = []
-        for x in range(num_players):
-            player = Player(f"Player {x+1}")
-            self.players.append(player)
+        self.number_of_players = 0
         self.discard_pile = []
         self.fini = False
+        self.turn = 0
         self.hole = 1
             
+            
+    def get_player_names(self):
+        return_players = []
+        for p in self.players:
+            return_players.append(p.player_name)
+        return return_players
+            
+    def add_player(self,player_name):
+        player = Player(player_name)
+        self.players.append(player)
+        print("added {player.player_name}")
+        self.number_of_players += 1
+        
+    def remove_player(self,player_name):
+        self.players.remove(player_name)
+        print("removed {player.player_name}")
+        self.number_of_players -=1
+        
     def play(self):
         while self.hole < 10:
             print(f"Hole {self.hole}")
@@ -71,6 +89,7 @@ class Game:
                         print(self.print_card(card),end = "   ")
                     num +=1
                 print("\n");
+    
                    
     def deal_hand(self, player):
         for x in range(6):
@@ -161,3 +180,28 @@ class Game:
         self.deck.append(("Joker", "Black"))
         self.deck.append(("Joker", "Red"))
         random.shuffle(self.deck)
+    
+    def game_state(self):
+        state = {
+            'hole': self.hole,
+            'fini': self.fini,
+            'discard_pile': self.discard_pile,
+            'players': [player.to_dict() for player in self.players],  # Use the player's `to_dict` method
+            'deck': self.deck  # You could also exclude the deck if you prefer to re-shuffle
+        }
+        return state
+    
+    def load_game_state(self, state):
+        self.hole = state['hole']
+        self.fini = state['fini']
+        self.discard_pile = state['discard_pile']
+
+        # Recreate players from the state
+        self.players = []
+        for player_state in state['players']:
+            player = Player(player_state['name'])
+            player.player_hand = player_state['hand']
+            player.player_score = player_state['score']
+            self.players.append(player)
+
+        self.deck = state['deck']
