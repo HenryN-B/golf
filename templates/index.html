@@ -38,56 +38,89 @@
 <script>
   const socket = io();
 
-  document
-    .querySelector('[name="create"]')
-    .addEventListener("click", (event) => {
-      event.preventDefault();
-      const name = document.querySelector('[name="name"]').value;
-
-      if (!name) {
-        alert("Please enter your name!");
-        return;
+  // Function to save player and room data to localStorage
+  function savePlayerData(name, room) {
+    localStorage.setItem("playerName", name);
+    localStorage.setItem("roomCode", room);
+  }
+  
+  function restorePlayerData() {
+    return {
+      name: localStorage.getItem("playerName"),
+      room: localStorage.getItem("roomCode"),
+    };
+  }
+  
+  // Event listener for creating a room
+  document.querySelector('[name="create"]').addEventListener("click", (event) => {
+    event.preventDefault();
+    const name = document.querySelector('[name="name"]').value;
+  
+  
+    // Emit the 'create_room' event and handle the response
+    socket.emit("create_room", { name });
+  
+    // Listen for the server response for room creation
+    socket.on("created_room", (data) => {
+      if (data.url) {
+        room = data.room;
+        savePlayerData(name, data.room); // Save room and player data
+        exists = false;
+        window.location.href = data.url + "?room_code=" + room +"&?name=" + name;
+      } else {
+        alert(data.message || "An error occurred while creating the room.");
       }
-
-      socket.emit("create_room", { name });
     });
-
+  });
+  
+  // Event listener for joining a room
   document.querySelector('[name="join"]').addEventListener("click", (event) => {
     event.preventDefault();
     const name = document.querySelector('[name="name"]').value;
     const room = document.querySelector('[name="code"]').value;
-
-    if (!name) {
-      alert("Please enter your name!");
-      return;
-    }
-
-    if (!room) {
-      alert("Please enter room code!");
-      return;
-    }
-
+    
+    // Emit the 'join_room' event and handle the response
     socket.emit("join_room", { name, room });
-  });
+  
+    // Listen for the server response for joining a room
+    socket.on("join", (data,) => {
+      if (data.url) {
+        savePlayerData(name, room); // Save room and player data
+        exists = true;
+        window.location.href = data.url + "?room_code=" + room +"&?name=" + name;
 
-  // Handle redirections
-  socket.emit("create_room", { name: "playerName" }, (response) => {
-    if (response.url) {
-      localStorage.setItem("name", "playerName");
-      localStorage.setItem("room", response.room);
-      window.location.href = response.url;
-    } else {
-      console.error(response.error);
-    }
+      } else {
+        alert(data.message || "An error occurred while joining the room.");
+      }
+    });
   });
 
   socket.on("error_message", (data) => {
     alert(data.message);
   });
 
-  window.addEventListener("beforeunload", () => {
-    localStorage.removeItem("name");
-    localStorage.removeItem("room");
+  // Restore player and room data on page load and validate with the server
+  document.addEventListener("DOMContentLoaded", () => {
+    const { name, room } = restorePlayerData();
+
+    if (name && room) {
+      fetch("/api/restore_session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, room }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (!data.success) {
+            alert(data.error);
+            localStorage.clear(); // Clear invalid data from localStorage
+            window.location.href = "/";
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to validate session:", err);
+        });
+    }
   });
 </script>
 {% endblock %}

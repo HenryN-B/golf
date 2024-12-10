@@ -1,13 +1,16 @@
-{% extends 'base.html' %} {% block content %}
+{% extends 'base.html' %}
+
+{% block content %}
 <div class="contain">
   <div class="lobby_code">
-    <h4>Lobby code: {{ code }}</h4>
+    <h4>Lobby code: {{ code }}</h4> <!-- Ensure 'code' is passed correctly -->
   </div>
+  
   <div class="in_lobby">
     <p>Players in lobby:</p>
     <ul class="list" id="players-list">
       {% for player in players %}
-      <li>{{ player }}</li>
+        <li>{{ player }}</li>  <!-- Players are rendered initially from the server -->
       {% endfor %}
     </ul>
   </div>
@@ -17,13 +20,19 @@
     </div>
   </form>
   {% if error %}
-  <ul>
-    <li>{{error}}</li>
-  </ul>
+    <ul>
+      <li>{{ error }}</li>
+    </ul>
   {% endif %}
 </div>
+
+<script src="https://cdn.socket.io/4.7.1/socket.io.min.js"></script>
 <script>
   var socket = io();
+
+  socket.on("connect", () => {
+    console.log("Connected to server");
+});
 
   // Listen for the "update_players" event from the server
   socket.on("update_players", function (data) {
@@ -48,38 +57,40 @@
     document.getElementById("start-button").style.display = "none";
   }
 
-  socket.on("redirect_to_game", (data) => {
-    window.location.href = data.url;
-  });
+  socket.on("acknowledge_join", (data) => {
+    console.log(`Joined room: ${data.room} as ${data.player}`);
+});
 
   document.addEventListener("DOMContentLoaded", () => {
-    const name = localStorage.getItem("name");
-    const room = localStorage.getItem("room");
-
+    const name = localStorage.getItem("playerName");
+    const room = localStorage.getItem("roomCode");
     if (name && room) {
-      fetch("/restore_session", {
+      fetch("api/restore_session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ name, room }),
       })
-        .then((response) => response.json())
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.json();
+        })
         .then((data) => {
           if (data.success) {
             console.log("Session restored");
           } else {
             console.error("Failed to restore session:", data.error);
           }
+        })
+        .catch((error) => {
+          console.error("Error restoring session:", error);
         });
     } else {
       console.error("No session data in localStorage");
     }
-  });
-
-  window.addEventListener("beforeunload", () => {
-    localStorage.removeItem("name");
-    localStorage.removeItem("room");
   });
 </script>
 {% endblock %}
