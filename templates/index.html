@@ -15,7 +15,9 @@
       class="input-field"
     />
   </div>
+
   <button type="submit" name="create" class="create">Create a Room</button>
+
   <div class="join">
     <input
       type="text"
@@ -33,61 +35,4 @@
   </ul>
   {% endif %}
 </form>
-
-<script src="https://cdn.socket.io/4.7.1/socket.io.min.js"></script>
-<script>
-  const socket = io();
-
-  document
-    .querySelector('[name="create"]')
-    .addEventListener("click", (event) => {
-      event.preventDefault();
-      const name = document.querySelector('[name="name"]').value;
-
-      if (!name) {
-        alert("Please enter your name!");
-        return;
-      }
-
-      socket.emit("create_room", { name });
-    });
-
-  document.querySelector('[name="join"]').addEventListener("click", (event) => {
-    event.preventDefault();
-    const name = document.querySelector('[name="name"]').value;
-    const room = document.querySelector('[name="code"]').value;
-
-    if (!name) {
-      alert("Please enter your name!");
-      return;
-    }
-
-    if (!room) {
-      alert("Please enter room code!");
-      return;
-    }
-
-    socket.emit("join_room", { name, room });
-  });
-
-  // Handle redirections
-  socket.emit("create_room", { name: "playerName" }, (response) => {
-    if (response.url) {
-      localStorage.setItem("name", "playerName");
-      localStorage.setItem("room", response.room);
-      window.location.href = response.url;
-    } else {
-      console.error(response.error);
-    }
-  });
-
-  socket.on("error_message", (data) => {
-    alert(data.message);
-  });
-
-  window.addEventListener("beforeunload", () => {
-    localStorage.removeItem("name");
-    localStorage.removeItem("room");
-  });
-</script>
 {% endblock %}

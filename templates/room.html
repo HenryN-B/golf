@@ -1,85 +1,55 @@
-{% extends 'base.html' %} {% block content %}
-<div class="contain">
-  <div class="lobby_code">
-    <h4>Lobby code: {{ code }}</h4>
+{%extends 'base.html' %} {% block content %}
+<div>
+  <div class = lobby-code>
+    Room Code: {{code}}
   </div>
-  <div class="in_lobby">
-    <p>Players in lobby:</p>
-    <ul class="list" id="players-list">
-      {% for player in players %}
-      <li>{{ player }}</li>
-      {% endfor %}
-    </ul>
+  <div class="players" id="players"></div>
+  <div class="inputs">
   </div>
-  <form method="POST">
-    <div>
-      <button id="start-button" name="start" class="start-button">Start</button>
-    </div>
-  </form>
-  {% if error %}
-  <ul>
-    <li>{{error}}</li>
-  </ul>
-  {% endif %}
+  {% if name == host %}
+  <div class = "start-button-cont">
+    <button id ="start" class = start>
+      start
+    </button>
+  </div>
+  {% endif%}
 </div>
+
+
 <script>
-  var socket = io();
+  var socketio = io();
+  const name = "{{name}}";
+  const host = "{{host}}";
 
-  // Listen for the "update_players" event from the server
-  socket.on("update_players", function (data) {
-    console.log(data);
-    var playersList = document.getElementById("players-list");
-    playersList.innerHTML = ""; // Clear the current list
+  socketio.on("update_players", (data) => {
+  const playersDiv = document.getElementById("players");
+  playersDiv.innerHTML = ""; // clear
 
-    // Append each player to the list
-    data.players.forEach(function (player) {
-      var li = document.createElement("li");
-      li.textContent = player;
-      playersList.appendChild(li);
-    });
+  data.players.forEach(name => {
+    playersDiv.innerHTML += `<div class="player-entry"><strong>${name}</strong></div>`;
+  });
+});
+
+const players = document.getElementById("players");
+
+if( name == host) {
+document.getElementById("start").addEventListener("click", function() {
+  console.log("Start button clicked!");
+  socketio.emit("start_game", { room: "{{code}}" });
+  
+});
+
+}
+
+socketio.on("game_started", (data) => {
+      console.log(data.msg);
+      window.location.href = "/game";  
   });
 
-  const currentUserId = "{{ name }}";
-  const creatorId = "{{ owner }}";
-
-  if (currentUserId === creatorId) {
-    document.getElementById("start-button").style.display = "block";
-  } else {
-    document.getElementById("start-button").style.display = "none";
-  }
-
-  socket.on("redirect_to_game", (data) => {
-    window.location.href = data.url;
-  });
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const name = localStorage.getItem("name");
-    const room = localStorage.getItem("room");
-
-    if (name && room) {
-      fetch("/restore_session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, room }),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.success) {
-            console.log("Session restored");
-          } else {
-            console.error("Failed to restore session:", data.error);
-          }
-        });
-    } else {
-      console.error("No session data in localStorage");
-    }
-  });
-
-  window.addEventListener("beforeunload", () => {
-    localStorage.removeItem("name");
-    localStorage.removeItem("room");
-  });
 </script>
+
+{% for player in players %}
+<script type="text/javascript"></script>
+createMessage("{{msg.name}}","{{msg.message}}"); {% endfor %} 
+
 {% endblock %}

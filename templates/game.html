@@ -1,6 +1,74 @@
 {% extends 'base.html' %} {% block content %}
-<form method="POST">
-  <div class="cards"></div>
-  <div class="cards"></div>
-</form>
+<div id="game-container">
+  <!-- Top player -->
+  <div class="player-area top hidden">
+    <div class="player-info">
+      <span class="player-name">  {{ game_data.player_names[2] if game_data.players_num > 2 else "" }}</span>
+      <span class="player-score"></span>
+    </div>
+    <div class="player-cards"></div>
+  </div>
+
+  <!-- Left player -->
+  <div class="player-area left hidden">
+    <div class="player-info vertical">
+      <span class="player-name">  {{ game_data.player_names[3] if game_data.players_num > 3 else "" }}</span>
+      <span class="player-score"></span>
+    </div>
+    <div class="player-cards vertical"></div>
+  </div>
+
+  <!-- Right player -->
+  <div class="player-area right hidden">
+    <div class="player-info vertical">
+      <span class="player-name">  {{ game_data.player_names[1] if game_data.players_num > 1 else "" }}</span>
+      <span class="player-score"></span>
+    </div>
+    <div class="player-cards vertical"></div>
+  </div>
+
+  <!-- Bottom player (always the user) -->
+  <div class="player-area bottom">
+    <div class="player-info">
+      <span class="player-name">{{ game_data.player_names[0] }}</span>
+      <span class="player-score"></span>
+    </div>
+    <div class="player-cards"></div>
+  </div>
+
+  <!-- Center deck/discard area -->
+  <div id="center-area">
+    <div id="deck" class="card-stack">Deck</div>
+    <div id="discard" class="card-stack">Discard</div>
+  </div>
+</div>
+
+<script>
+game_data = {{ game_data | tojson | safe }};
+
+function setupPlayers(numPlayers) {
+  const top = document.querySelector(".top");
+  const left = document.querySelector(".left");
+  const right = document.querySelector(".right");
+
+  // Hide all
+  [top, left, right].forEach(p => p.classList.add("hidden"));
+
+  if (numPlayers === 2) {
+    top.classList.remove("hidden"); // Opponent across from user
+  } else if (numPlayers === 3) {
+    top.classList.remove("hidden");
+    right.classList.remove("hidden");
+  } else if (numPlayers === 4) {
+    top.classList.remove("hidden");
+    left.classList.remove("hidden");
+    right.classList.remove("hidden");
+  }
+}
+
+setupPlayers(data.player_num);
+
+
+</script>
+
 {% endblock %}
