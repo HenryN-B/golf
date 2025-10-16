@@ -60,6 +60,11 @@ def room():
 def game():
     room = session.get("room")
     name = session.get("name")
+    if not room or not name:
+        return redirect(url_for("index"))
+    if room not in rooms:
+        return redirect(url_for("index"))
+    
     game = rooms[room]["game"]
     game.reset()
 

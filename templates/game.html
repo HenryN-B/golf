@@ -1,27 +1,35 @@
 {% extends 'base.html' %} {% block content %}
 <div id="game-container">
   <!-- Top player -->
-  <div class="player-area top hidden">
+  <div class="player-area top hidden" id = "top-player">
     <div class="player-info">
-      <span class="player-name">  {{ game_data.player_names[2] if game_data.players_num > 2 else "" }}</span>
+      <span class="player-name">  
+          {% if game_data.players_num == 2 %}
+            {{ game_data.player_names[1] }}
+          {% elif game_data.players_num > 2 %}
+            {{ game_data.player_names[2] }}
+          {% else %}
+            ""
+          {% endif %}
+      </span>
       <span class="player-score"></span>
     </div>
     <div class="player-cards"></div>
   </div>
 
   <!-- Left player -->
-  <div class="player-area left hidden">
-    <div class="player-info vertical">
-      <span class="player-name">  {{ game_data.player_names[3] if game_data.players_num > 3 else "" }}</span>
+  <div class="player-area left hidden" id = "left-player">
+    <div class="player-info">
+      <span class="player-name">  {{ game_data.player_names[1] if game_data.players_num > 2 else "" }}</span>
       <span class="player-score"></span>
     </div>
     <div class="player-cards vertical"></div>
   </div>
 
   <!-- Right player -->
-  <div class="player-area right hidden">
+  <div class="player-area right hidden" id = "right-player">
     <div class="player-info vertical">
-      <span class="player-name">  {{ game_data.player_names[1] if game_data.players_num > 1 else "" }}</span>
+      <span class="player-name">  {{ game_data.player_names[3] if game_data.players_num > 1 else "" }}</span>
       <span class="player-score"></span>
     </div>
     <div class="player-cards vertical"></div>
@@ -33,7 +41,12 @@
       <span class="player-name">{{ game_data.player_names[0] }}</span>
       <span class="player-score"></span>
     </div>
-    <div class="player-cards"></div>
+    <div class="player-cards">
+      <div class = card-row>
+      </div>
+          <div class = card-row>
+      </div>
+    </div>
   </div>
 
   <!-- Center deck/discard area -->
@@ -46,19 +59,17 @@
 <script>
 game_data = {{ game_data | tojson | safe }};
 
+// Show only the needed player boxes
 function setupPlayers(numPlayers) {
   const top = document.querySelector(".top");
   const left = document.querySelector(".left");
   const right = document.querySelector(".right");
 
-  // Hide all
-  [top, left, right].forEach(p => p.classList.add("hidden"));
-
   if (numPlayers === 2) {
-    top.classList.remove("hidden"); // Opponent across from user
+    top.classList.remove("hidden");
   } else if (numPlayers === 3) {
     top.classList.remove("hidden");
-    right.classList.remove("hidden");
+    left.classList.remove("hidden");
   } else if (numPlayers === 4) {
     top.classList.remove("hidden");
     left.classList.remove("hidden");
@@ -66,9 +77,47 @@ function setupPlayers(numPlayers) {
   }
 }
 
+// Create a 2x3 grid of face-down cards for each player
+function setupCards() {
+  const cardBackPath = "{{ url_for('static', filename='assets/images/cards/card_back_blue.png') }}";
 
+  // Select all player card areas
+  const playerAreas = document.querySelectorAll(".player-cards");
 
-setupPlayers(data.player_num);
+  playerAreas.forEach((area) => {
+    // Clear any existing cards (important if reloading a round)
+    area.innerHTML = "";
+    // Two rows, three cards per row
+    for (let row = 0; row < 2; row++) {
+      const rowDiv = document.createElement("div");
+      rowDiv.classList.add("card-row");
+
+      for (let col = 0; col < 3; col++) {
+        const card = document.createElement("img");
+        card.src = cardBackPath;
+        card.classList.add("card", "face-down");
+        card.alt = "Card Back";
+        rowDiv.appendChild(card);
+      }
+
+      area.appendChild(rowDiv);
+    }
+  });
+}
+
+function turn() {
+    if (game_data.name == true) {
+    card.classList.add("clickable");
+    card.addEventListener("click", () => {
+    });
+    }
+}
+
+setupPlayers(game_data.players_num);
+setupCards();
+
+turn();
+
 
 
 </script>
