@@ -4,6 +4,8 @@ from flask_socketio import join_room, leave_room, send, SocketIO
 import random
 from string import ascii_uppercase
 import utils.logic as golf
+from threading import Lock
+import time
 
 from dotenv import load_dotenv
 
@@ -12,6 +14,8 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 socketio = SocketIO(app)
 
+pending_removals = {}
+lock = Lock()
 rooms = {}
 
 def generate_unique_code(length):
@@ -42,6 +46,11 @@ def index():
             rooms[room] = {"players": [], "game": golf.Game(room), "Host": name, "code": code}
         elif code not in rooms:
             return render_template("index.html", error="Room does not egg cist",code = code, name = name)
+        elif name in rooms[room]["players"]:
+            return render_template("index.html", error="Player name already in room",code = code, name = name)
+        elif name == room:
+             return render_template("index.html", error="Name can not be room code",code = code, name = name)
+            
         session["room"] = room
         session["name"] = name
         
@@ -77,6 +86,7 @@ def game():
     while player_names[0] != name:
         player_names = player_names[1:] + player_names[:1]
 
+    game.flip
     game_data = {
         "name": name,
         "room": room,
@@ -97,48 +107,81 @@ def connect():
 
     if not room or not name:
         return
+    
+    if room not in rooms:
+        return
 
-    #NEED TO MAKE A CHECK FOR IF THAT PLAYER IS ALREADY IN THE GAME
+    with lock:
+        if name in pending_removals:
+            pending_removals[name]["cancel"] = True
+            del pending_removals[name]
+
     if name not in rooms[room]["players"]:
         rooms[room]["players"].append(name)
         rooms[room]["game"].add_player(name, room)
 
     join_room(room)
     print(f"{name} connected to room {room}")
-
-    # Send updated player list to everyone
     socketio.emit("update_players", {"players": rooms[room]["players"]}, to=room)
-    
+
+
 @socketio.on("disconnect")
 def disconnect():
     room = session.get("room")
     name = session.get("name")
-    
-    if rooms[room]["game"].playing:
+    sid = request.sid
+
+    if not room or not name:
         return
 
-    leave_room(room)
+    with lock:
+        pending_removals[name] = {
+            "room": room,
+            "sid": sid,
+            "cancel": False,
+            "timestamp": time.time(),
+        }
 
-    if room in rooms:
+    socketio.start_background_task(remove_player_after_delay, name)
+
+
+def remove_player_after_delay(name):
+    socketio.sleep(3)  # Wait 3 seconds
+
+    with lock:
+        if name not in pending_removals or pending_removals[name]["cancel"]:
+            if name in pending_removals:
+                del pending_removals[name]
+            return
+
+        info = pending_removals.pop(name)
+        room = info["room"]
+        sid = info["sid"]
+
+    with app.app_context():
+        if room not in rooms:
+            return
+        if rooms[room]["game"].playing:
+            return
+
+        leave_room(room, sid=sid, namespace="/")
+
         if name in rooms[room]["players"]:
             rooms[room]["players"].remove(name)
-
-            # remove from game object too
             for p in rooms[room]["game"].players:
                 if p.player_name == name:
                     rooms[room]["game"].remove_player(p, room)
                     break
 
-        # If empty room, delete it
         if not rooms[room]["players"]:
             del rooms[room]
-            print("deleting room")
+            print("Deleting room")
         else:
             socketio.emit("update_players", {"players": rooms[room]["players"]}, to=room)
 
-    print(f"{name} disconnected from room {room}")
-    
-    
+        print(f"{name} fully disconnected from room {room}")
+        
+        
 @socketio.on("start_game")
 def handle_start_game(data):
     room = data.get("room")
