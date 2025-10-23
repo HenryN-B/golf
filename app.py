@@ -86,7 +86,6 @@ def game():
     while player_names[0] != name:
         player_names = player_names[1:] + player_names[:1]
 
-    game.flip
     game_data = {
         "name": name,
         "room": room,
@@ -185,9 +184,12 @@ def remove_player_after_delay(name):
 @socketio.on("start_game")
 def handle_start_game(data):
     room = data.get("room")
+    game = rooms[room]["game"]
     print(f"Game started in room {room}")
     # send a message to everyone in the room
+    game.reset()
     rooms[room]["game"].playing = True
+    game.discard_pile.append(game.draw_top_card())
     socketio.emit("game_started", {"msg": "The game has started!"}, to=room)
 
 

@@ -80,10 +80,8 @@ function setupPlayers(numPlayers) {
 // Create a 2x3 grid of face-down cards for each player
 function setupCards() {
   const cardBackPath = "{{ url_for('static', filename='assets/images/cards/card_back_blue.png') }}";
-
   // Select all player card areas
   const playerAreas = document.querySelectorAll(".player-cards");
-
   playerAreas.forEach((area) => {
     // Clear any existing cards (important if reloading a round)
     area.innerHTML = "";
@@ -91,7 +89,6 @@ function setupCards() {
     for (let row = 0; row < 2; row++) {
       const rowDiv = document.createElement("div");
       rowDiv.classList.add("card-row");
-
       for (let col = 0; col < 3; col++) {
         const card = document.createElement("img");
         card.src = cardBackPath;
@@ -99,10 +96,34 @@ function setupCards() {
         card.alt = "Card Back";
         rowDiv.appendChild(card);
       }
-
       area.appendChild(rowDiv);
     }
   });
+
+
+  // Set the deck image
+  const deck_area = document.getElementById("deck");
+  deck_area.innerHTML = "";
+  const deck_img = document.createElement("img");
+  deck_img.src = cardBackPath;
+  deck_img.classList.add("card", "face-down");
+  deck_img.alt = "deck"
+  deck_area.appendChild(deck_img);
+
+
+
+  //set the first discard
+  console.log(game_data.discard[0]);
+  var first_disc_path = "card" + game_data.discard[0][1] + game_data.discard[0][0][0] +".png";
+  console.log(first_disc_path);
+  const disc_path = `/static/assets/images/cards/${first_disc_path}`;
+  const discard_area = document.getElementById("discard");
+  discard_area.innerHTML = "";
+  const card_img = document.createElement("img");
+  card_img.src = disc_path; 
+  card_img.classList.add("card");
+  card_img.alt = first_disc_path;
+  discard_area.appendChild(card_img);
 }
 
 function turn() {
@@ -115,7 +136,6 @@ function turn() {
 
 setupPlayers(game_data.players_num);
 setupCards();
-
 turn();
 
 
